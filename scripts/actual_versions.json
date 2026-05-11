@@ -1,20 +1,20 @@
 {
-  "mainnet": {
-      "cardano-node": "10.5.4",
-      "cardano-db-sync": "13.6.0.5",
-      "cardano-address": "4.0.2",
-      "cardano-wallet": "v2025-12-15"
-  },
-  "preprod": {
-      "cardano-node": "10.5.4",
-      "cardano-db-sync": "13.6.0.5",
-      "cardano-address": "4.0.2",
-      "cardano-wallet": "v2025-12-15"
-  },
-  "preview": {
-      "cardano-node": "10.5.4",
-      "cardano-db-sync": "13.6.0.5",
-      "cardano-address": "4.0.2",
-      "cardano-wallet": "v2025-12-15"
-  }
+    "mainnet": {
+        "cardano-node": "11.0.1",
+        "cardano-db-sync": "13.7.0.5",
+        "cardano-address": "4.0.2",
+        "cardano-wallet": "v2026-04-17"
+    },
+    "preprod": {
+        "cardano-node": "11.0.1",
+        "cardano-db-sync": "13.7.0.5",
+        "cardano-address": "4.0.2",
+        "cardano-wallet": "v2026-04-17"
+    },
+    "preview": {
+        "cardano-node": "11.0.1",
+        "cardano-db-sync": "13.7.0.5",
+        "cardano-address": "4.0.2",
+        "cardano-wallet": "v2026-04-17"
+    }
 }

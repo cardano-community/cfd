@@ -34,15 +34,23 @@ function compare_json_recursive() {
                 local KEY_ESCAPED="[$KEY]"
             fi
 
-            JSON1_VALUE=$(echo $JSON1_JSON | jq ".$KEY_ESCAPED" 2>/dev/null)
-            JSON2_VALUE=$(echo $JSON2_JSON | jq ".$KEY_ESCAPED" 2>/dev/null)
+            JSON1_VALUE=$(echo $JSON1_JSON | jq -c ".$KEY_ESCAPED" 2>/dev/null)
+            JSON2_VALUE=$(echo $JSON2_JSON | jq -c ".$KEY_ESCAPED" 2>/dev/null)
 
             echo -n "." >&2
             
             local VALUE_TYPE_JSON1=$(echo $JSON1_VALUE | jq -r 'type' 2>/dev/null)
             local VALUE_TYPE_JSON2=$(echo $JSON2_VALUE | jq -r 'type' 2>/dev/null)
             
-            if [ "$VALUE_TYPE_JSON1" == "object" ] || [ "$VALUE_TYPE_JSON1" == "array" ] || [ "$VALUE_TYPE_JSON2" == "object" ] || [ "$VALUE_TYPE_JSON2" == "array" ]; then
+            if [ "$VALUE_TYPE_JSON1" != "$VALUE_TYPE_JSON2" ]; then
+                if [ "$JSON1_VALUE" == "null" ] && [ "$VALUE_TYPE_JSON2" != "null" ]; then
+                    CHANGES_BUFFER+="+${SELECTOR}.${KEY_ESCAPED}%|#${JSON2_VALUE}\n"
+                elif [ "$JSON2_VALUE" == "null" ] && [ "$VALUE_TYPE_JSON1" != "null" ]; then
+                    CHANGES_BUFFER+="-${SELECTOR}.${KEY_ESCAPED}\n"
+                elif [ "${JSON1_VALUE}" != '"auto"' ] && [ "${JSON1_VALUE}" != '""' ]; then
+                    CHANGES_BUFFER+="^${SELECTOR}.${KEY_ESCAPED}%|#${JSON1_VALUE}||${JSON2_VALUE}\n"
+                fi
+            elif [ "$VALUE_TYPE_JSON1" == "object" ] || [ "$VALUE_TYPE_JSON1" == "array" ] || [ "$VALUE_TYPE_JSON2" == "object" ] || [ "$VALUE_TYPE_JSON2" == "array" ]; then
                 local TEMP_BUFFER
                 TEMP_BUFFER=$(compare_json_recursive "$JSON1_VALUE" "$JSON2_VALUE" "$SELECTOR.$KEY_ESCAPED" "")
                 if [ -n "$TEMP_BUFFER" ]; then
@@ -115,7 +123,27 @@ function apply_diff() {
 
         case "$ACTION" in
             +)
-                UPDATED_JSON=$(echo "$UPDATED_JSON" | jq "$KEY_PATH = $VALUE")
+                if [[ "$KEY_PATH" =~ ^(.*)\[([0-9]+)\]$ ]]; then
+                    local PARENT_PATH="${BASH_REMATCH[1]}"
+                    local ARRAY_INDEX="${BASH_REMATCH[2]}"
+                    local ARRAY_LENGTH
+                    local ARRAY_TYPE
+
+                    if [ -z "$PARENT_PATH" ]; then
+                        PARENT_PATH="."
+                    fi
+
+                    ARRAY_TYPE=$(echo "$UPDATED_JSON" | jq -r "$PARENT_PATH | type" 2>/dev/null)
+                    ARRAY_LENGTH=$(echo "$UPDATED_JSON" | jq -r "$PARENT_PATH | length" 2>/dev/null)
+
+                    if [ "$ARRAY_TYPE" == "array" ] && [ "$ARRAY_INDEX" -gt "$ARRAY_LENGTH" ]; then
+                        UPDATED_JSON=$(echo "$UPDATED_JSON" | jq "$PARENT_PATH += [$VALUE]")
+                    else
+                        UPDATED_JSON=$(echo "$UPDATED_JSON" | jq "$KEY_PATH = $VALUE")
+                    fi
+                else
+                    UPDATED_JSON=$(echo "$UPDATED_JSON" | jq "$KEY_PATH = $VALUE")
+                fi
                 ;;
             ^)
                 NEW_VAL=${VALUE#*||}
@@ -183,9 +211,9 @@ function check_and_compare_json() {
         echo "Checking $FILE_NAME"
     fi
 
-    if [[ "$FILE_NAME" == *"-genesis.json" ]]; then
+    if [[ "$FILE_NAME" == *"-genesis.json" ]] || [[ "$FILE_NAME" == *"-snapshot.json" ]]; then
         if [ "$MODE" != "silent" ]; then
-            echo "Genesis file accepted as is."
+            echo "$FILE_NAME accepted as is."
         fi
         cp "${NEW_DEF_JSON_FILE}" "${NEW_USER_JSON_FILE}"
         return 1 
@@ -236,5 +264,3 @@ function check_and_compare_json() {
 
     return 0 
 }
-
-

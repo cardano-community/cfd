@@ -11,7 +11,7 @@ function prepare_software {
         return 0
     else
         echo "The called software is not ready to launch. Please, fix the issues before."
-        return 1
+        exit 1
     fi
 }
 
@@ -168,18 +168,35 @@ function software_deploy(){
             
             mkdir -p $SF_BIN_DIR  
             
-            local TARGZ_NAME=$(echo $SF_GLOBAL_META | jq -r '."name-format"')
-            TARGZ_NAME=$(replace-placeholders "$TARGZ_NAME" "$DESIRED_SF_VERSION_BASE" "$NETWORK_NAME")
+            local NAME_FORMATS=()
+            local DOWNLOAD_LINKS=()
+            local DOWNLOAD_LINK=""
+            local DOWNLOAD_LINK_FOUND=false
 
-            local DOWNLOAD_LINKS_RAW=$(echo $SF_GLOBAL_META | jq -r '."download-links"[]')
+            mapfile -t NAME_FORMATS < <(echo "$SF_GLOBAL_META" | jq -r 'if ."name-format" | type == "array" then ."name-format"[] else ."name-format" end')
+            mapfile -t DOWNLOAD_LINKS < <(echo "$SF_GLOBAL_META" | jq -r '."download-links"[]')
 
+            for NAME_FORMAT in "${NAME_FORMATS[@]}"; do
+                local TARGZ_NAME
+                TARGZ_NAME=$(replace-placeholders "$NAME_FORMAT" "$DESIRED_SF_VERSION_BASE" "$NETWORK_NAME")
 
-            for LINK in $DOWNLOAD_LINKS_RAW; do
-                DOWNLOAD_LINK=$(replace-placeholders "$LINK" "$DESIRED_SF_VERSION" "$NETWORK_NAME")$TARGZ_NAME
-                if curl --output /dev/null --silent --head --fail "$DOWNLOAD_LINK"; then
+                for LINK in "${DOWNLOAD_LINKS[@]}"; do
+                    DOWNLOAD_LINK=$(replace-placeholders "$LINK" "$DESIRED_SF_VERSION" "$NETWORK_NAME")$TARGZ_NAME
+                    if curl --output /dev/null --silent --head --fail "$DOWNLOAD_LINK"; then
+                        DOWNLOAD_LINK_FOUND=true
+                        break
+                    fi
+                done
+
+                if [ "$DOWNLOAD_LINK_FOUND" = true ]; then
                     break
                 fi
             done
+
+            if [ "$DOWNLOAD_LINK_FOUND" = false ]; then
+                echo "Error: no downloadable archive found for $SF_NAME ver: $DESIRED_SF_VERSION."
+                return 1
+            fi
 
             local TMP_EXTRACT_DIR
             TMP_EXTRACT_DIR=$(mktemp -d)
