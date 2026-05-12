@@ -211,7 +211,7 @@ function check_and_compare_json() {
         echo "Checking $FILE_NAME"
     fi
 
-    if [[ "$FILE_NAME" == *"-genesis.json" ]] || [[ "$FILE_NAME" == *"-snapshot.json" ]]; then
+    if [[ "$FILE_NAME" == *"-genesis.json" ]] || [[ "$FILE_NAME" == *"-snapshot.json" ]] || [[ "$FILE_NAME" == "checkpoints.json" ]]; then
         if [ "$MODE" != "silent" ]; then
             echo "$FILE_NAME accepted as is."
         fi
