@@ -13,7 +13,6 @@ source "$(dirname "$0")/scripts/wallet-tools.sh"
 source "$(dirname "$0")/scripts/pool-tools.sh"
 source "$(dirname "$0")/scripts/config-tools.sh"
 
-
 CONFIG_FILE="conf.json"
 CONFIG_FILE_DEF="scripts/conf.json_default"
 
@@ -22,13 +21,12 @@ check-config $CONFIG_FILE $CONFIG_FILE_DEF
 USERNAME=$(whoami)
 NETWORK_NAME="$1"
 
-check-dependencies bc jq tar wget awk nano file curl gpg gpg-agent haveged chrony
+check-dependencies bc jq tar wget awk nano file curl gpg gpg-agent haveged chrony git
 check-ip
 check-deployment-path
-network-manager $NETWORK_NAME
+network-manager "$NETWORK_NAME"
 
 CARDANO_DIR=$(from-config '.global."cardano-dir"')
-
 
 CARDANO_SOFTWARE_DIR=$CARDANO_DIR/software
 CARDANO_NETWORKS_DIR=$CARDANO_DIR/networks/$NETWORK_NAME
@@ -38,16 +36,27 @@ CARDANO_CONFIG_DIR=$CARDANO_NETWORKS_DIR/config
 CARDANO_POOL_DIR=$CARDANO_NETWORKS_DIR/pool
 CARDANO_KEYS_DIR=$CARDANO_NETWORKS_DIR/keys
 CARDANO_SERVICES_DIR=$CARDANO_NETWORKS_DIR/services
-CARDANO_SOCKET_PATH=$CARDANO_NETWORKS_DIR/cardano.socket
+CARDANO_SOCKET_PATH=$(from-config ".networks.\"${NETWORK_NAME}\".software.\"cardano-node\".\"node-socket-path\"")
 
-mkdir -p $CARDANO_SOFTWARE_DIR
-mkdir -p $CARDANO_NETWORKS_DIR
-mkdir -p $CARDANO_STORAGE_DIR
-mkdir -p $CARDANO_BINARIES_DIR
-mkdir -p $CARDANO_CONFIG_DIR
-mkdir -p $CARDANO_POOL_DIR
-mkdir -p $CARDANO_KEYS_DIR
-mkdir -p $CARDANO_SERVICES_DIR
+if [ -z "$CARDANO_SOCKET_PATH" ] || [ "$CARDANO_SOCKET_PATH" == "null" ]; then
+    CARDANO_SOCKET_PATH="./cardano.socket"
+fi
+
+if [[ "$CARDANO_SOCKET_PATH" != /* ]]; then
+    CARDANO_SOCKET_PATH="$CARDANO_NETWORKS_DIR/${CARDANO_SOCKET_PATH#./}"
+fi
+
+CARDANO_SOCKET_DIR=$(dirname "$CARDANO_SOCKET_PATH")
+
+mkdir -p "$CARDANO_SOFTWARE_DIR"
+mkdir -p "$CARDANO_NETWORKS_DIR"
+mkdir -p "$CARDANO_STORAGE_DIR"
+mkdir -p "$CARDANO_BINARIES_DIR"
+mkdir -p "$CARDANO_CONFIG_DIR"
+mkdir -p "$CARDANO_POOL_DIR"
+mkdir -p "$CARDANO_KEYS_DIR"
+mkdir -p "$CARDANO_SERVICES_DIR"
+mkdir -p "$CARDANO_SOCKET_DIR"
 
 check-gpg-is-ready
 check-keyring-initialized

@@ -95,6 +95,7 @@
                 "cardano-node": {
                     "version": "auto",
                     "node-port": "5001",
+                    "node-socket-path": "./cardano.socket",
                     "required-files": {
                         "peer-snapshot.json": "d https://book.world.dev.cardano.org/environments^/%/peer-snapshot.json",
                         "checkpoints.json": "d https://book.world.dev.cardano.org/environments^/%/checkpoints.json",
@@ -136,6 +137,7 @@
                 "cardano-node": {
                     "version": "auto",
                     "node-port": "5002",
+                    "node-socket-path": "./cardano.socket",
                     "required-files": {
                         "peer-snapshot.json": "d https://book.world.dev.cardano.org/environments^/%/peer-snapshot.json",
                         "checkpoints.json": "d https://book.world.dev.cardano.org/environments^/%/checkpoints.json",
@@ -177,6 +179,7 @@
                 "cardano-node": {
                     "version": "auto",
                     "node-port": "5003",
+                    "node-socket-path": "./cardano.socket",
                     "required-files": {
                         "peer-snapshot.json": "d https://book.world.dev.cardano.org/environments^/%/peer-snapshot.json",
                         "checkpoints.json": "d https://book.world.dev.cardano.org/environments^/%/checkpoints.json",

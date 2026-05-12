@@ -1,6 +1,9 @@
 #!/bin/bash
 
 source "$(dirname "$0")/scripts/startup.sh"
+source "$(dirname "$0")/scripts/update-manager.sh"
+
+update-cfd "$#"
 
 function init-cfd {
     local OPTION_N_DESCRIPTIONS=(
@@ -34,4 +37,3 @@ fi
 
 echo "---" 1>&2
 echo -e "${UNDERLINE}Direct call for this action${NORMAL}: $DIRECT_CALL" 1>&2
-
