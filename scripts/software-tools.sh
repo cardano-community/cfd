@@ -171,7 +171,7 @@ function software_deploy(){
             local NAME_FORMATS=()
             local DOWNLOAD_LINKS=()
             local DOWNLOAD_LINK=""
-            local DOWNLOAD_LINK_FOUND=false
+            local SOFTWARE_INSTALLED=false
 
             mapfile -t NAME_FORMATS < <(echo "$SF_GLOBAL_META" | jq -r 'if ."name-format" | type == "array" then ."name-format"[] else ."name-format" end')
             mapfile -t DOWNLOAD_LINKS < <(echo "$SF_GLOBAL_META" | jq -r '."download-links"[]')
@@ -182,36 +182,33 @@ function software_deploy(){
 
                 for LINK in "${DOWNLOAD_LINKS[@]}"; do
                     DOWNLOAD_LINK=$(replace-placeholders "$LINK" "$DESIRED_SF_VERSION" "$NETWORK_NAME")$TARGZ_NAME
-                    if curl --output /dev/null --silent --head --fail "$DOWNLOAD_LINK"; then
-                        DOWNLOAD_LINK_FOUND=true
+                    local TMP_EXTRACT_DIR
+                    TMP_EXTRACT_DIR=$(mktemp -d)
+
+                    if download_and_extract_targz "$DOWNLOAD_LINK" "$TMP_EXTRACT_DIR"; then
+                        if flatten-desired-files-from-archive "$TMP_EXTRACT_DIR" "$SF_BIN_DIR" "${DESIRED_FILES_ARR[@]}"; then
+                            SOFTWARE_INSTALLED=true
+                            rm -rf "$TMP_EXTRACT_DIR"
+                            break
+                        fi
+                    fi
+
+                    rm -rf "$TMP_EXTRACT_DIR"
+
+                    if [ "$SOFTWARE_INSTALLED" = true ]; then
                         break
                     fi
                 done
 
-                if [ "$DOWNLOAD_LINK_FOUND" = true ]; then
+                if [ "$SOFTWARE_INSTALLED" = true ]; then
                     break
                 fi
             done
 
-            if [ "$DOWNLOAD_LINK_FOUND" = false ]; then
+            if [ "$SOFTWARE_INSTALLED" = false ]; then
                 echo "Error: no downloadable archive found for $SF_NAME ver: $DESIRED_SF_VERSION."
                 return 1
             fi
-
-            local TMP_EXTRACT_DIR
-            TMP_EXTRACT_DIR=$(mktemp -d)
-
-            if ! download_and_extract_targz "$DOWNLOAD_LINK" "$TMP_EXTRACT_DIR"; then
-                rm -rf "$TMP_EXTRACT_DIR"
-                return 1
-            fi
-
-            if ! flatten-desired-files-from-archive "$TMP_EXTRACT_DIR" "$SF_BIN_DIR" "${DESIRED_FILES_ARR[@]}"; then
-                rm -rf "$TMP_EXTRACT_DIR"
-                return 1
-            fi
-
-            rm -rf "$TMP_EXTRACT_DIR"
            
             
             if [ "$VERBOSITY" != "silent" ]; then

@@ -35,6 +35,7 @@ function download_and_extract_targz() {
 
     if [ $STATUS -ne 0 ]; then
         echo "Error: Unable to download archive from $URL"
+        rm -f $TEMP_ARCHIVE
         return 1
     else
         echo "Success!"
@@ -47,6 +48,7 @@ function download_and_extract_targz() {
 
     if [ $EXTRACT_STATUS -ne 0 ]; then
         echo "Error: Unable to extract archive $TEMP_ARCHIVE"
+        rm -f $TEMP_ARCHIVE
         return 1
     else 
         echo "Success!"
