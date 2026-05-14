@@ -78,7 +78,7 @@ function build-tx {
 
 
     CHAINED_UTXO_BALANCE=$CHANGE
-    CHAINED_UTXO_ID="$($CARDANO_BINARIES_DIR/cardano-cli latest transaction txid --tx-file $CARDANO_KEYS_DIR/$TX_NAME.raw)#0"
+    CHAINED_UTXO_ID="$($CARDANO_BINARIES_DIR/cardano-cli latest transaction txid --output-text --tx-file $CARDANO_KEYS_DIR/$TX_NAME.raw)#0"
     
     echo "CHAINED_UTXO_ID='$CHAINED_UTXO_ID'" > $CARDANO_KEYS_DIR/chainbuffer
     echo "CHAINED_UTXO_BALANCE='$CHAINED_UTXO_BALANCE'" >> $CARDANO_KEYS_DIR/chainbuffer
