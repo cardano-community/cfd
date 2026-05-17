@@ -144,32 +144,35 @@ function wrap-cli-command {
     rm -f "$tmp_error_file"
 
     if [[ -n "$error_output" ]]; then
-        if echo "$error_output" | grep -q "cardano-cli: Network.Socket.connect: <socket:"; then
+        if [[ " ${args[*]} " == *" transaction submit "* ]] && [[ -n "$output" ]]; then
+            echo "$error_output"
+        elif echo "$error_output" | grep -q "cardano-cli: Network.Socket.connect: <socket:"; then
             echo -e "\e[1;41mERROR\e[1;m Can't connect to the Cardano node. Please, check if it launched." 1>&2
+            return 1
         else
             echo "$error_output" 1>&2
+            return 1
         fi
-        return 1
     fi
 
-    if [[ " ${args[*]} " == *" transaction submit "* ]] && echo "$output" | grep -q "Transaction successfully submitted"; then
-        local tx_file=""
-        for ((i = 0; i < ${#args[@]}; i++)); do
-            if [[ "${args[i]}" == "--tx-file" ]]; then
-                tx_file="${args[i+1]}"
-                break
-            fi
-        done
-
-        if [[ -n "$tx_file" ]]; then
-            local txid_output
-            txid_output=$(cli latest transaction txid --output-text --tx-file "$tx_file" 2>/dev/null)
-            echo -e "$output"
-            echo -e "Transaction ID: $txid_output"
-        fi
-    elif [ -n "$output" ]; then
-        echo -e "$output"
-    fi
+#    if [[ " ${args[*]} " == *" transaction submit "* ]] && echo "$output" | grep -q "Transaction successfully submitted"; then
+#        local tx_file=""
+#        for ((i = 0; i < ${#args[@]}; i++)); do
+#            if [[ "${args[i]}" == "--tx-file" ]]; then
+#                tx_file="${args[i+1]}"
+#                break
+#            fi
+#        done
+#
+#        if [[ -n "$tx_file" ]]; then
+#            local txid_output
+#            txid_output=$(cli latest transaction txid --output-text --tx-file "$tx_file" 2>/dev/null)
+#            echo -e "$output"
+#            echo -e "Transaction ID: $txid_output"
+#        fi
+#    elif [ -n "$output" ]; then
+     echo -e "$output"
+#    fi
 
     return 0
 }
